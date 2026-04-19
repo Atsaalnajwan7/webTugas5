@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analisis Sentimen Komentar YouTube</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .container {
+            padding: 20px;
+        }
+
+        /* Card Utama */
+        .main-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+        }
+
+        /* Content */
+        .content {
+            padding: 30px;
+        }
+
+        /* Textarea */
+        textarea {
+            width: 100%;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            padding: 15px;
+            font-size: 16px;
+            resize: vertical;
+            transition: all 0.3s;
+        }
+
+        textarea:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+        }
+
+        /* Button */
+        .btn-predict {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 40px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-predict:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+
+        .btn-reset {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 12px 40px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-reset:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        /* Result Card */
+        .result-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 20px;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Sentiment Badge */
+        .sentiment-badge {
+            display: inline-block;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 24px;
+        }
+
+        .sentiment-positif {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+        }
+
+        .sentiment-netral {
+            background: linear-gradient(135deg, #ffc107, #fd7e14);
+            color: white;
+        }
+
+        .sentiment-negatif {
+            background: linear-gradient(135deg, #dc3545, #e83e8c);
+            color: white;
+        }
+
+        /* Confidence Bar */
+        .confidence-bar {
+            height: 10px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
+        .fill-positif { background: linear-gradient(90deg, #28a745, #20c997); }
+        .fill-netral { background: linear-gradient(90deg, #ffc107, #fd7e14); }
+        .fill-negatif { background: linear-gradient(90deg, #dc3545, #e83e8c); }
+
+        /* Example Buttons */
+        .example-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .example-btn {
+            background: #f0f0f0;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .example-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        /* Stat Cards */
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+            color: white;
+            height: 100%;
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        /* Visualization Section */
+        .viz-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .viz-image {
+            width: 100%;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        /* History Table */
+        .history-table {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .table th {
+            position: sticky;
+            top: 0;
+            background: white;
+        }
+
+        /* Loading Spinner */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <!-- Main Card -->
+                <div class="main-card">
+                    <div class="header">
+                        <h1><i class="fas fa-comment-dots"></i> Analisis Sentimen</h1>
+                        <p>Komentar YouTube - Naturalisasi Timnas Indonesia</p>
+                        <p class="small mt-2">
+                            <i class="fas fa-smile"></i> Positif | 
+                            <i class="fas fa-meh"></i> Netral | 
+                            <i class="fas fa-frown"></i> Negatif
+                        </p>
+                    </div>
+                    
+                    <div class="content">
+                        <!-- Input Area -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Masukkan Komentar:</label>
+                            <textarea id="commentInput" rows="4" 
+                                placeholder="Contoh: Timnas Indonesia mainnya bagus banget! Saya bangga dengan perjuangan mereka."></textarea>
+                            
+                            <div class="example-buttons">
+                                <small class="text-muted">Contoh:</small>
+                                <button class="example-btn" onclick="setExample('positif')">
+                                    <i class="fas fa-smile"></i> Positif
+                                </button>
+                                <button class="example-btn" onclick="setExample('netral')">
+                                    <i class="fas fa-meh"></i> Netral
+                                </button>
+                                <button class="example-btn" onclick="setExample('negatif')">
+                                    <i class="fas fa-frown"></i> Negatif
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="text-center mb-4">
+                            <button class="btn-predict me-2" onclick="predictSentiment()">
+                                <i class="fas fa-robot"></i> Prediksi Sentimen
+                            </button>
+                            <button class="btn-reset" onclick="resetHistory()">
+                                <i class="fas fa-trash"></i> Reset History
+                            </button>
+                        </div>
+                        
+                        <!-- Loading Spinner -->
+                        <div id="loading" class="loading">
+                            <div class="spinner"></div>
+                            <p class="mt-2">Memproses...</p>
+                        </div>
+                        
+                        <!-- Result Section -->
+                        <div id="resultSection" style="display: none;">
+                            <!-- Prediction Result -->
+                            <div id="predictionResult" class="result-card"></div>
+                            
+                            <!-- Statistics Cards -->
+                            <div class="row mt-4" id="statsCards">
+                                <div class="col-md-4 mb-3">
+                                    <div class="stat-card" style="background: linear-gradient(135deg, #28a745, #20c997);">
+                                        <i class="fas fa-smile fa-2x"></i>
+                                        <div class="stat-number" id="statPositif">0</div>
+                                        <p>Komentar Positif</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <div class="stat-card" style="background: linear-gradient(135deg, #ffc107, #fd7e14);">
+                                        <i class="fas fa-meh fa-2x"></i>
+                                        <div class="stat-number" id="statNetral">0</div>
+                                        <p>Komentar Netral</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <div class="stat-card" style="background: linear-gradient(135deg, #dc3545, #e83e8c);">
+                                        <i class="fas fa-frown fa-2x"></i>
+                                        <div class="stat-number" id="statNegatif">0</div>
+                                        <p>Komentar Negatif</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Visualizations -->
+                            <div class="viz-section mt-4">
+                                <h5 class="mb-3"><i class="fas fa-chart-bar"></i> Visualisasi Data</h5>
+                                <div class="row" id="visualizationsContainer">
+                                    <div class="col-md-6">
+                                        <img id="barChartImg" class="viz-image" style="display: none;">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <img id="pieChartImg" class="viz-image" style="display: none;">
+                                    </div>
+                                </div>
+                                <div class="row mt-3" id="wordcloudsContainer">
+                                    <div class="col-md-4">
+                                        <img id="wordcloudPositif" class="viz-image" style="display: none;">
+                                        <p class="text-center small">Wordcloud Positif</p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <img id="wordcloudNetral" class="viz-image" style="display: none;">
+                                        <p class="text-center small">Wordcloud Netral</p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <img id="wordcloudNegatif" class="viz-image" style="display: none;">
+                                        <p class="text-center small">Wordcloud Negatif</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- History Table -->
+                            <div class="viz-section mt-4">
+                                <h5 class="mb-3"><i class="fas fa-history"></i> Riwayat Komentar</h5>
+                                <div class="history-table">
+                                    <table class="table table-sm table-bordered">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th>No</th>
+                                                <th>Komentar</th>
+                                                <th>Sentimen</th>
+                                                <th>Confidence</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="historyTableBody">
+                                            <tr>
+                                                <td colspan="4" class="text-center">Belum ada komentar</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Set contoh komentar
+        function setExample(type) {
+            const examples = {
+                positif: "Timnas Indonesia mainnya bagus banget! Saya bangga dengan perjuangan mereka. Luar biasa!",
+                netral: "Pertandingan hari ini berjalan biasa saja, tidak ada yang istimewa. Kita lihat saja nanti.",
+                negatif: "Saya tidak suka dengan permainan timnas, jelek banget! Sangat mengecewakan."
+            };
+            document.getElementById('commentInput').value = examples[type];
+        }
+
+        // Prediksi sentimen
+        async function predictSentiment() {
+            const text = document.getElementById('commentInput').value;
+            
+            if (!text.trim()) {
+                alert('Masukkan komentar terlebih dahulu!');
+                return;
+            }
+            
+            // Show loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('resultSection').style.display = 'none';
+            
+            try {
+                const formData = new FormData();
+                formData.append('text', text);
+                
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    alert(data.error);
+                    document.getElementById('loading').style.display = 'none';
+                    return;
+                }
+                
+                // Tampilkan hasil prediksi
+                displayPredictionResult(data);
+                
+                // Tampilkan statistik
+                updateStats(data.stats);
+                
+                // Tampilkan visualisasi
+                displayVisualizations(data.visualizations);
+                
+                // Tampilkan history
+                await loadHistory();
+                
+                // Tampilkan section
+                document.getElementById('resultSection').style.display = 'block';
+                document.getElementById('loading').style.display = 'none';
+                
+                // Clear input
+                document.getElementById('commentInput').value = '';
+                
+            } catch (error) {
+                alert('Error: ' + error.message);
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+        
+        // Tampilkan hasil prediksi
+        function displayPredictionResult(data) {
+            const resultDiv = document.getElementById('predictionResult');
+            
+            let icon = '', colorClass = '', fillClass = '';
+            if (data.sentiment === 'positif') {
+                icon = '😊'; colorClass = 'sentiment-positif'; fillClass = 'fill-positif';
+            } else if (data.sentiment === 'negatif') {
+                icon = '😞'; colorClass = 'sentiment-negatif'; fillClass = 'fill-negatif';
+            } else {
+                icon = '😐'; colorClass = 'sentiment-netral'; fillClass = 'fill-netral';
+            }
+            
+            const confidencePercent = (data.confidence * 100).toFixed(2);
+            
+            resultDiv.innerHTML = `
+                <div class="text-center">
+                    <div class="sentiment-badge ${colorClass}">
+                        ${icon} SENTIMEN: ${data.sentiment.toUpperCase()}
+                    </div>
+                    <div class="mt-4">
+                        <h5>Tingkat Keyakinan: ${confidencePercent}%</h5>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill ${fillClass}" style="width: ${confidencePercent}%"></div>
+                        </div>
+                    </div>
+                    <div class="mt-3 p-3 bg-white rounded">
+                        <small class="text-muted">Teks asli:</small>
+                        <p class="mt-2">"${data.text.substring(0, 200)}"</p>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Update statistik
+        function updateStats(stats) {
+            document.getElementById('statPositif').innerText = stats.positif || 0;
+            document.getElementById('statNetral').innerText = stats.netral || 0;
+            document.getElementById('statNegatif').innerText = stats.negatif || 0;
+        }
+        
+        // Tampilkan visualisasi
+        function displayVisualizations(viz) {
+            if (viz.bar_chart) {
+                const barImg = document.getElementById('barChartImg');
+                barImg.src = 'data:image/png;base64,' + viz.bar_chart;
+                barImg.style.display = 'block';
+            }
+            
+            if (viz.pie_chart) {
+                const pieImg = document.getElementById('pieChartImg');
+                pieImg.src = 'data:image/png;base64,' + viz.pie_chart;
+                pieImg.style.display = 'block';
+            }
+            
+            if (viz.wordcloud_positif) {
+                const wcPos = document.getElementById('wordcloudPositif');
+                wcPos.src = 'data:image/png;base64,' + viz.wordcloud_positif;
+                wcPos.style.display = 'block';
+            }
+            
+            if (viz.wordcloud_netral) {
+                const wcNet = document.getElementById('wordcloudNetral');
+                wcNet.src = 'data:image/png;base64,' + viz.wordcloud_netral;
+                wcNet.style.display = 'block';
+            }
+            
+            if (viz.wordcloud_negatif) {
+                const wcNeg = document.getElementById('wordcloudNegatif');
+                wcNeg.src = 'data:image/png;base64,' + viz.wordcloud_negatif;
+                wcNeg.style.display = 'block';
+            }
+        }
+        
+        // Load history
+        async function loadHistory() {
+            try {
+                const response = await fetch('/history');
+                const data = await response.json();
+                
+                const tbody = document.getElementById('historyTableBody');
+                
+                if (data.comments.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center">Belum ada komentar</td></tr>';
+                    return;
+                }
+                
+                let html = '';
+                data.comments.slice().reverse().forEach((comment, index) => {
+                    let badge = comment.sentimen === 'positif' ? 'success' : 
+                               (comment.sentimen === 'negatif' ? 'danger' : 'warning');
+                    let confidencePercent = (comment.confidence * 100).toFixed(1);
+                    html += `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${comment.komentar.substring(0, 60)}...</td>
+                            <td><span class="badge bg-${badge}">${comment.sentimen}</span></td>
+                            <td>${confidencePercent}%</td>
+                        </tr>
+                    `;
+                });
+                tbody.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Error loading history:', error);
+            }
+        }
+        
+        // Reset history
+        async function resetHistory() {
+            if (confirm('Apakah Anda yakin ingin mereset semua history?')) {
+                try {
+                    await fetch('/reset', { method: 'POST' });
+                    
+                    // Reset tampilan
+                    document.getElementById('resultSection').style.display = 'none';
+                    document.getElementById('commentInput').value = '';
+                    
+                    alert('History berhasil direset!');
+                    
+                } catch (error) {
+                    alert('Error: ' + error.message);
+                }
+            }
+        }
+        
+        // Load initial data
+        async function loadInitialData() {
+            try {
+                const response = await fetch('/history');
+                const data = await response.json();
+                
+                if (data.total > 0) {
+                    document.getElementById('resultSection').style.display = 'block';
+                    await loadHistory();
+                    
+                    // Load visualizations
+                    const vizResponse = await fetch('/visualizations');
+                    const vizData = await vizResponse.json();
+                    displayVisualizations(vizData.visualizations);
+                    
+                    // Update stats
+                    const stats = {
+                        positif: data.comments.filter(c => c.sentimen === 'positif').length,
+                        netral: data.comments.filter(c => c.sentimen === 'netral').length,
+                        negatif: data.comments.filter(c => c.sentimen === 'negatif').length
+                    };
+                    updateStats(stats);
+                }
+            } catch (error) {
+                console.error('Error loading initial data:', error);
+            }
+        }
+        
+        // Load initial data on page load
+        loadInitialData();
+    </script>
+</body>
+</html>

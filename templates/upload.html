@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload Data</title>
+</head>
+<body>
+
+    <h1>Upload Dataset + Auto Analisis</h1>
+
+    <form method="post" enctype="multipart/form-data">
+        <input type="file" name="file">
+        <button type="submit">Upload & Analisis</button>
+    </form>
+
+    {% if tables %}
+        <h2>Preview + Hasil Klasifikasi</h2>
+        {{ tables|safe }}
+    {% endif %}
+
+    {% if chart %}
+        <h2>Visualisasi Sentimen</h2>
+        <img src="/{{ chart }}" width="500">
+    {% endif %}
+
+    {% if wordcloud %}
+        <h2>Wordcloud</h2>
+        <img src="/{{ wordcloud }}" width="500">
+    {% endif %}
+
+    <br>
+    <a href="/">Kembali</a>
+
+</body>
+</html>
